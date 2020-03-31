@@ -9,11 +9,13 @@ This repository contains analysis of the data on Covid-19 published daily by Joh
 
 
 <b>Work in progress</b>, I'm still trying to fix the following:
-* JHU changed their data format for daily reports early March, so my current data merging for states is inaccurate before March 15.
+* JHU changed their data format for daily reports early March, so my current data merging for states is inaccurate before March 23. This messes up the log plots starting when crossing 100 cases.
+* colorbar labels in covid_map
+* better metrics for colorbars
 * The annotation wording is sparse and inaccurate, and just a concept for now.
-* Highlights per state
 * Font, colorscheme, axislabels, legends
 * further commenting / readme description
+* log plots for countries have an annotation in invisible region, giving their pngs a wide blank spot
 
 <b>Sources:</b>
 * https://en.wikipedia.org/wiki/2019%E2%80%9320_coronavirus_pandemic_by_country_and_territory
@@ -26,15 +28,22 @@ This repository contains analysis of the data on Covid-19 published daily by Joh
 
 ## Average daily cases in the last seven days around the world <!-- US and in the world.-->
 
-<img src=./figs/covid_map.png  >          | <!-- <img src=./figs/covid_map_states.png  > -->
+<img src=./figs/covid_map.png  >          |   <img src=./figs/covid_state_map.png  >  
 :-------------------------:|:-------------------------:
 
 ## Cases per country <a name="country_log"></a>
- <img src=./figs/covid_country_caseslog.png >    
+![Cases per country](./figs/covid_country_caseslog.png)
 
-In the next plot I have higlighted individual countries.
 
-![cases worldwide, code in JHUdata_country_map](./figs/covid_country_casesHighlightLog.png)
+## Deaths per country <a name="country_log"></a>
+![Deaths per country](./figs/covid_country_deathslog.png)
+
+In the next plot I have highlighted the cases in individual countries.
+
+![Cases per country highlighted](./figs/covid_country_casesHighlightLog.png)
+
+And this is the corresponding death rate in those countries:
+![Deaths per country highlighted](./figs/covid_country_deathsHighlightLog.png)
 
 
 ## Daily cases and deaths per country  <a name="country_daily"></a>
@@ -42,15 +51,24 @@ I have added a curve to smooth out day to day variation. The annotations are tak
 
 Additionally I added the estimated number of infections. This assumes an 8 day delay between date of infection and the reported case, and an 11 day delay between date of infection and death. I chose these delays based on the curves from China, but they are rather arbitrary and have a large band of uncertainty. The graphs are inspired by this paper: https://jamanetwork.com/journals/jama/fullarticle/2762130.
 
+![Daily cases per country](./figs/covid_country_dailycases.png)
 
-![cases worldwide, code in JHUdata_country_map](./figs/covid_country_dailycases.png)
 
 
-## Crves per state <a name="state_log"></a>
-<b>Cases per state</b>
-![cases worldwide, code in JHUdata_country_map](./figs/covid_states_caseslog.png)
+## Curves per state <a name="state_log"></a>
+Similar analysis to the global data can be performed on local areas. The data for the local areas is generally noisier but since JHU switched to a new format on March 22 it is more reliable.
 
+
+![cases per state](./figs/covid_states_caseslog.png)
+
+![deaths per state](./figs/covid_states_deathslog.png)
+
+Cases highlighted per state
+![cases in state highlighted](./figs/covid_state_casesHighlightLog.png)
+
+Deaths highlighted per state
+![deaths in state highlighted](./figs/covid_state_deathsHighlightLog.png)
 
 
 ## Daily cases per state <a name="state_daily"></a>
-![cases worldwide, code in JHUdata_country_map](./figs/covid_states_dailycases.png)
+![daily cases per state](./figs/covid_states_dailycases.png)
