@@ -9,13 +9,10 @@ This repository contains analysis of the data on Covid-19 published daily by Joh
 
 
 <b>Work in progress</b>, I'm still trying to fix the following:
-* JHU changed their data format for daily reports early March, so my current data merging for states is inaccurate before March 23. This messes up the log plots starting when crossing 100 cases.
-* colorbar labels in covid_map
-* better metrics for colorbars
+* JHU changed their data format for daily reports early March, so my current data merging for states is inaccurate before March 23. This messes up the log plots starting when crossing 100 cases.  
 * The annotation wording is sparse and inaccurate, and just a concept for now.
 * Font, colorscheme, axislabels, legends
 * further commenting / readme description
-* log plots for countries have an annotation in invisible region, giving their pngs a wide blank spot
 
 <b>Sources:</b>
 * https://en.wikipedia.org/wiki/2019%E2%80%9320_coronavirus_pandemic_by_country_and_territory
