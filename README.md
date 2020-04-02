@@ -8,8 +8,7 @@ This repository contains analysis of the data on Covid-19 published daily by Joh
 * [Daily cases per state](#state_daily)
 
 
-<b>Work in progress</b>, I'm still trying to fix the following:
-* JHU changed their data format for daily reports early March, so my current data merging for states is inaccurate before March 23. This messes up the log plots starting when crossing 100 cases.  
+<b>Work in progress</b>, I'm still trying to fix the following: 
 * The annotation wording is sparse and inaccurate, and just a concept for now.
 * Font, colorscheme, axislabels, legends
 * further commenting / readme description
