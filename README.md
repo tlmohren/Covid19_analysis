@@ -56,9 +56,9 @@ Additionally I added the estimated number of infections. This assumes an 8 day d
 Similar analysis to the global data can be performed on local areas. The data for the local areas is generally noisier but since JHU switched to a new format on March 22 it is more reliable.
 
 
-![cases per state](./figs/covid_states_caseslog.png)
+![cases per state](./figs/covid_state_caseslog.png)
 
-![deaths per state](./figs/covid_states_deathslog.png)
+![deaths per state](./figs/covid_state_deathslog.png)
 
 Cases highlighted per state
 ![cases in state highlighted](./figs/covid_state_casesHighlightLog.png)
