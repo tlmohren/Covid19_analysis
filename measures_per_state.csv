@@ -1,11 +1,50 @@
 State,Date,Measure
 Alabama,3/18/2020,Schools closed
-Alabama,3/28/2020,Lockdown
-California,3/16/2020,Local Lockdown
-California,3/19/2020,Lockdown
+Alabama, 3/24/2020,Shelter in place
+Alaska,3/28/2020,Stay at home
+Arizona,3/31/2020,Stay at home
+California,3/16/2020,Local lockdown
+California,3/19/2020,Stay at home
+Colorado,3/26/2020,Stay at home
+Conneticut,3/23/2020,Stay at home
+Delaware,3/24/2020,Shelter in place
+District of Columbia, 4/01/2020, Stay at home
+Florida, 4/03/2020, Stay at home
+Georgia, 4/03/2020, Shelter in place
+Hawaii, 3/25/2020, Stay at home 
+Idaho, 3/25/2020, Stay at home
 Illinois,3/17/2020,Schools closed
-Illinois,3/20/2020,Lockdown
+Illinois, 3/21/2020, Stay at home
+Indiana, 3/24/2020, Stay at home
+Kansas, 3/30/2020, Stay at home
+Kentucky, 3/26/2020, Stay at home
 Louisiana,3/16/2020,stores closed
-New Jersey,3/26/2020,shelter in place
-New York,3/17/2020,shelter in place
-Washington,3/22/2020, stay-home order
+Louisiana, 3/23/2020, Stay at home
+Maine, 4/02/2020, Stay at home
+Maryland, 3/30/2020, Stay at home
+Massachusetts, 3/24/2020, Stay at home
+Michigan, 3/24/2020, Stay at home
+Minnesota, 3/27/2020, Stay at home
+Mississippi, 4/03/2020, Shelter in place 
+Missouri, 3/24/2020, Stay at home (KC)
+Montana, 3/28/2020, Stay at home
+Nevada, 4/01/2020, Stay at home
+New Hampshire, 3/27/2020, Stay at home
+New Jersey, 3/21/2020, Stay at home 
+New York, 3/22/2020, Stay at home
+North Carolina, 3/30/2020, Stay at home
+Ohio, 3/23/2020, Stay at home 
+Oklahoma, 3/28/2020, Shelter in place (OC)
+Oregon, 3/23/2020, Stay at home 
+Pennsylvania, 4/01/2020, Stay at home
+Rhode Island, 3/28/2020, Stay at home 
+South Carolina, 3/26/2020, Stay at home (Ch)
+Tennessee, 3/31/2020, Stay at home 
+Texas, 3/26/2020, Stay at home (avg.) 
+Utah, 3/30/2020, Stay at home (SLC)
+Vermont, 3/25/2020, Stay at home
+Virginia,3/30/2020,Stay at home 
+Washington,3/23/2020,Stay at home
+West Virginia, 3/24/2020,Stay at home
+Wisconsin,3/25/2020,Stay at home
+Wyoming,3/28/2020,Stay at home (Ja)

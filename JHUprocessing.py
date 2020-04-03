@@ -1,4 +1,5 @@
 import pandas as pd
+import matplotlib.pyplot as plt 
 
 def merge_data(path, file_list):
     
@@ -26,7 +27,17 @@ def merge_data(path, file_list):
     df = df.sort_values( by=['Country/Region','Date']).reset_index(drop=True) 
 
     return df
+    
+####--------------------fonts---------------------------------------
 
+families = ['serif', 'sans-serif', 'cursive', 'fantasy', 'monospace']
+
+plt.rcParams["font.family"] = families[1]
+# plt.rcParams['text.usetex'] = True
+# plt.rcParams['text.latex.preamble'] = [r'\usepackage{amsmath}'] #for \text command
+
+
+# plt.style.use('latex_scientificPaperStyle.mplstyle')
 
 state_dict = {
         'AK': 'Alaska',

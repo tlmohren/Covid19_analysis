@@ -8,10 +8,9 @@ This repository contains analysis of the data on Covid-19 published daily by Joh
 * [Daily cases per state](#state_daily)
 
 
-<b>Work in progress</b>, I'm still trying to fix the following: 
+<b>Work in progress</b>, I'm still trying to fix the following:
 * The annotation wording is sparse and inaccurate, and just a concept for now.
 * Font, colorscheme, axislabels, legends
-* further commenting / readme description
 
 <b>Sources:</b>
 * https://en.wikipedia.org/wiki/2019%E2%80%9320_coronavirus_pandemic_by_country_and_territory
@@ -34,11 +33,10 @@ This repository contains analysis of the data on Covid-19 published daily by Joh
 ## Deaths per country <a name="country_log"></a>
 ![Deaths per country](./figs/covid_country_deathslog.png)
 
-In the next plot I have highlighted the cases in individual countries.
-
+## Cases per country, highlighted
 ![Cases per country highlighted](./figs/covid_country_casesHighlightLog.png)
 
-And this is the corresponding death rate in those countries:
+## Deaths per country, highlighted
 ![Deaths per country highlighted](./figs/covid_country_deathsHighlightLog.png)
 
 
@@ -59,10 +57,10 @@ Similar analysis to the global data can be performed on local areas. The data fo
 
 ![deaths per state](./figs/covid_state_deathslog.png)
 
-Cases highlighted per state
+## Cases highlighted per state
 ![cases in state highlighted](./figs/covid_state_casesHighlightLog.png)
 
-Deaths highlighted per state
+## Deaths highlighted per state
 ![deaths in state highlighted](./figs/covid_state_deathsHighlightLog.png)
 
 
