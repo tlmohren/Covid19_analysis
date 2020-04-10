@@ -7,7 +7,14 @@ from datetime import timedelta
 from matplotlib.dates import date2num       #-->Update 
  
 from matplotlib.colors import ListedColormap
- 
+import json
+
+import matplotlib.dates as dt    
+import geopandas as gpd
+import datetime
+
+
+import glob
 
 ####--------------------parameters --------------------------------------
  
@@ -204,6 +211,59 @@ def get_exponential_ratio( date_series, value_series, region_series, averaging_p
         
     return new_ratio_col
 
+
+def add_measures_column( fileName, date_series, region_series ):
+
+    measures_col = pd.Series(np.nan, index= region_series.index  ) 
+    
+    df_m = pd.read_csv( fileName, index_col=None ) 
+    df_m['Date'] = pd.to_datetime( df_m['Date'] ).dt.date 
+
+    # add measures to additional column
+    for i,row in df_m.iterrows(): 
+        country = row['Country/Region']
+        date = row['Date']
+        bool_loc = ( region_series == country) & ( date_series == date) 
+        measures_col.loc[bool_loc] = row['Measure']
+    return measures_col
+
+
+
+def find_daily_cases( date_series, value_series):
+    daily_col = pd.Series(np.nan, index= value_series.index  ) 
+    days = date_series.unique()   
+    
+    bool_day0 = date_series == days[0]
+    daily_col.loc[bool_day0 ] = 0 
+
+    for day in days[1:]:     
+
+        bool_day = date_series == day 
+        bool_prior = date_series == ( day- timedelta(days=1))  
+
+        delta = value_series[bool_day].values - value_series[bool_prior].values
+        
+        daily_col[bool_day] = delta 
+    return daily_col
+
+
+
+
+
+def smooth(x,window_len=11,window='hanning'):
+  
+    # ['flat', 'hanning', 'hamming', 'bartlett', 'blackman']
+    s=np.r_[x[window_len-1:0:-1],x,x[-2:-window_len-1:-1]]
+    #print(len(s))
+    if window == 'flat': #moving average
+        w=np.ones(window_len,'d')
+    else:
+        w=eval('np.'+window+'(window_len)')
+
+    y=np.convolve(w/w.sum(),s,mode='valid')
+    return y  
+
+
 def plot_highlight( ax_p, goal_country, date_series, value_series, region_series, 
 	countries_to_highlight): 
     xCmax = date_series.max() 
@@ -247,6 +307,184 @@ def plot_highlight( ax_p, goal_country, date_series, value_series, region_series
     ax_p.spines['right'].set_visible(False)
     
     return ax_p 
+
+
+
+def plot_daily( ax_p, date_col, data_series, measures = pd.DataFrame() ):
+    
+    # plotting parameters 
+    bar_alpha = .15
+    fill_alpha = .2 
+    
+    bar_col = 'k'#np.array([ 1,1,1] )*0.5
+    fill_col = 'r'
+    bar_line = 'k'
+    fill_line = 'r' 
+
+    filter_w = 9
+    filter_w_delay = 13
+
+    case_delay = 12
+    death_delay = 12
+
+    edge_cut = int( np.floor(filter_w/2) ) 
+    edge_cut_delay = int( np.floor(filter_w_delay/2) )  
+    
+    weeks = mdates.DayLocator(bymonthday=[1,11,21], interval=1, tz=None)
+    months_fmt = mdates.DateFormatter('%m-%d') 
+    #------------------------------------------------------
+ 
+    date_col = date_col.apply(date2num) 
+    
+    z_bar= 3
+    z_fill = 1
+    
+    # smoothen data
+    plot_data =  data_series.values  
+    plot_data_fake = np.append( plot_data, plot_data[-1]*np.ones((2)) )
+    plot_smooth = smooth( plot_data_fake ,filter_w,'hamming' )[edge_cut:-edge_cut-2]
+    plot_smooth_delay = smooth( plot_data_fake ,filter_w_delay,'hamming' )[edge_cut_delay:-edge_cut_delay-2]
+    
+    # plot data
+    ax_p.bar( date_col,  plot_data   ,
+             alpha = bar_alpha , color=bar_col, 
+                label = 'Reported cases', zorder = z_bar) 
+    ax_p.plot( date_col, plot_smooth, color=bar_line, zorder = z_bar)
+    
+    ax_p.plot( date_col.iloc[0:-case_delay] , plot_smooth_delay[case_delay:] , color=fill_line, zorder = z_fill)
+    ax_p.fill_between( date_col.iloc[0:-case_delay] , 0, plot_smooth_delay[case_delay:] ,
+                      alpha= fill_alpha, color=fill_col, 
+                      label='12-day delay', zorder = z_fill
+                    )
+
+    # axis modify
+    ax_p.xaxis_date()
+    ax_p.xaxis.set_major_locator(weeks)
+    ax_p.xaxis.set_major_formatter(months_fmt)  
+ 
+    cmax = plot_smooth.max()*1.2  
+    ax_p.set_ylim([0,cmax])  
+    
+    arrowprops = dict(    arrowstyle = "->"    )
+ 
+    # annotate
+    counter = 0
+    for i,row in measures.iterrows(): 
+        ax_p.plot( [row['Date'],row['Date']] ,[0,cmax],'--', alpha = 0.5,color='k',linewidth=1,zorder  = 6)  
+        chinese = ['Hubei','China'] 
+        if any(c in measures.iloc[0,:]['Measure'] for c in chinese):
+            ax_p.annotate( row['Measure'], (row["Date"],cmax*(0.94-0.1*counter)) ,
+                              xytext = ( days[-1],cmax*(0.9-0.1*counter)) ,
+                             rotation = 0, va='bottom',ha='right',fontsize=10, arrowprops=arrowprops)   
+        else:
+            ax_p.annotate( row['Measure'], (row["Date"],cmax*(0.94-0.1*counter)) ,
+                              xytext = ( days[0],cmax*(0.9-0.1*counter)) ,
+                             rotation = 0, va='bottom',ha='left',fontsize=10, arrowprops=arrowprops)    
+        counter = counter+1 
+    return ax_p 
+
+	    
+def load_daily_reports( file_path):
+    
+    daily_reports = glob.glob(file_path + '\*.csv') 
+    df = pd.DataFrame()
+    for file in daily_reports :
+        df_temp = pd.read_csv( file, index_col=None, header=0)  
+
+        if  '03-13-2020' in file :
+            # correct for mistake in JHU data set
+            df_temp['Last Update'] = pd.to_datetime(df_temp['Last Update']   )
+            df_temp['Last Update'] = df_temp['Last Update'] + timedelta(days=2)  
+
+        if  '03-09-2020' in file : 
+            # correct for mistake in JHU data set
+            df_temp['Last Update'] = pd.to_datetime(df_temp['Last Update']   )
+            df_temp['Last Update'] = df_temp['Last Update'] + timedelta(days=1) 
+
+        df = df.append(df_temp, sort=True)  
+    return df
+
+
+
+
+
+
+def replace_state( x):
+    
+    error_dict = {'Chicago':'Illinois',
+            'NE (From Diamond Princess)':'Nebraska',
+            'CA (From Diamond Princess)':'California',
+            'TX (From Diamond Princess)':'Texas',
+            'Unassigned Location (From Diamond Princess)':'Other',
+            'D.C.':'District of Columbia',
+            'Puerto Rico':'Other',
+            'Guam':'Other',
+            'U.S.':'Other',
+            'US':'Other',
+            'Virgin Islands':'Other',
+            'United States Virgin Islands':'Other',
+            'Wuhan Evacuee':'Other',
+            'American Samoa':'Other',
+            'Northern Mariana Islands':'Other', 
+            'OR ':'Oregon'} 
+    
+    state_entry = x['Province/State'].split(", ")[-1] 
+    if state_entry in  state_dict.keys(): 
+        new =  state_dict[ state_entry]  
+    elif state_entry in error_dict.keys():
+        new = error_dict[state_entry]  
+    else:
+        new = state_entry   
+    return new 
+
+def process_daily_data( df_daily):
+    # convert both separately 
+    df_daily['Last Update'] = pd.to_datetime(df_daily['Last Update']   )
+    df_daily['Last_Update'] = pd.to_datetime(df_daily['Last_Update']   )   # 
+    cond = df_daily['Last_Update'].isnull()
+    df_daily['Last Update'] = df_daily['Last Update'].where(cond, df_daily['Last_Update'] ) 
+    df_daily['Datetime'] = pd.to_datetime(df_daily['Last Update'] , unit='D'   ) 
+
+    ### optional: convert times to pacific time 
+    df_daily['Date'] = df_daily['Datetime'].dt.date 
+
+
+    # compensate country/region
+    df_daily['Country/Region'].isnull().sum() 
+    cond = df_daily['Country_Region'].isnull()
+    df_daily['Country/Region'] = df_daily['Country/Region'].where(cond, df_daily['Country_Region'] ) 
+
+    # province state
+    cond = df_daily['Province_State'].isnull()
+    df_daily['Province/State'] = df_daily['Province/State'].where(cond, df_daily['Province_State'] ) 
+
+
+    col_order = ['Date','Country/Region','Province/State','Active','Confirmed','Deaths','Recovered' ]
+    df_daily = df_daily[col_order]
+    
+    bool_US = df_daily['Country/Region'] =='US'
+    df_US = df_daily[bool_US ]
+
+
+
+    df_US.loc[:,'State'] = df_US.apply(replace_state, axis=1)
+    
+    
+    df_state =  df_US.groupby(['State','Date']).sum().reset_index()
+  
+    df_state = df_state.sort_values(by=['State','Date'], ascending=True )  
+    df_state.head() 
+ 
+    # drop some states
+    bool_other = df_state['State'].str.contains( 'Other' , regex=False) 
+    df_state.drop( df_state[bool_other].index, inplace=True)  
+  
+    bool_other = df_state['State'].str.contains( 'Princess' , regex=False) 
+    df_state.drop( df_state[bool_other].index, inplace=True)  
+
+
+    return df_state 
+
 
 
 
@@ -298,7 +536,7 @@ if __name__ == '__main__':
 	df_country.loc[bool_cases & bool_china,'Delta C'] = xCmax+ china_add
 	df_country.loc[bool_deaths & bool_china,'Delta D'] = xDmax+ china_add
 
-
+	# find ratio and doubling # days
 	df_country['ratio'] = get_exponential_ratio( df_country['Date'], 
 	                                            df_country['Confirmed'],
 	                                            df_country['Country/Region'], 
@@ -310,6 +548,156 @@ if __name__ == '__main__':
 	                                            df_country['Country/Region'], 
 	                                            averaging_period )  
 	df_country['doublingD'] = pd.cut( df_country['ratioD'],   bin_array ,labels=range(len(bin_array)-1) , include_lowest=True )
+
+ 
+ 
+	df_country['Daily Confirmed'] = find_daily_cases( df_country['Date'] , df_country['Confirmed'] )
+	df_country['Daily Death'] = find_daily_cases( df_country['Date'] , df_country['Death'] )
+ 
+
+	df_country['Measure'] = add_measures_column( 'measures_per_country.csv', 
+	                                            df_country['Date'] ,
+	                                            df_country['Country/Region'])
+
+
+ 	#--plotting map country----------------------------
+ 
+	world = gpd.read_file(gpd.datasets.get_path('naturalearth_lowres')) 
+
+	countries_w = world['name'].tolist()
+	countries_c = df_country['Country/Region'].unique().tolist()
+	 
+	conversion_dict = {'United States': 'US',
+	                   'Taiwan': 'Taiwan*',
+	                   'Czech Rep.':'Czechia',
+	                   'Korea':'Korea, South',
+	                   'Dem. Rep. Korea': 'Korea, North',
+	                  'Dominican Rep.':'Dominican Republic' } 
+	          
+	world['name'] = world['name'].map(conversion_dict).fillna(world['name'])
+
+	world['Cases'] = 0 
+	countries = world['name'].tolist()
+	 
+	dates = df_country['Date'].unique() 
+
+	for country in countries: 
+	    bool_country = df_country['Country/Region'] == country 
+	    bool_date = df_country['Date'] == dates[-1]
+	    bool_prior = df_country['Date'] == dates[-7] 
+	    if (bool_country & bool_date).sum() > 0:
+	        now_cases = df_country[bool_country & bool_date ]['Confirmed'].iloc[0]
+	        prior_cases = df_country[bool_country & bool_prior ]['Confirmed'].iloc[0]
+	        latest_cases = (now_cases-prior_cases)/7
+	    else:
+	        latest_cases = 0 
+	    
+	    bool_world = world['name'] == country  
+	    world.loc[bool_world,'Cases'] = np.log(latest_cases+1) 
+
+
+
+
+
+	# state data import and process  
+	daily_path = r'D:\Code_projects\Covid19_analysis\COVID-19\csse_covid_19_data\csse_covid_19_daily_reports'
+
+	df_daily = load_daily_reports( daily_path )
+ 
+	df_state = process_daily_data( df_daily ) 
+
+	# adjust california funk 
+	bool_cal = df_state['State'] == 'California'
+	bool_prior = df_state['Date'] < datetime.datetime(2020,2,10).date() 
+	df_state.loc[bool_cal & bool_prior,'Confirmed'] = 0 
+
+
+	threshold_cases = 100
+	threshold_deaths = 10
+
+	df_state['Delta C'] =   days_since_threshold( df_state['Date'],
+	                                df_state['Confirmed'],
+	                                df_state['State'] , 
+	                                threshold_cases) 
+
+	df_state['Delta D'] =  days_since_threshold( df_state['Date'],
+	                                df_state['Deaths'],
+	                                df_state['State'] , 
+	                                threshold_deaths)
+    
+	# find ratio and doubling # days
+	averaging_period = 3
+
+	# bin_array = np.array( [0, 2.**(1./8), 2.**(1./7), 2.**(1./6), 2.**(1./5), 2.**(1./4) ,np.inf ]) 
+	# bin_tick_labels = ['8','7','6','5','4']
+	df_state['ratio'] =  get_exponential_ratio( df_state['Date'], 
+	                                            df_state['Confirmed'],
+	                                            df_state['State'], 
+	                                            averaging_period )   
+	df_state['doubling'] = pd.cut( df_state['ratio'],   bin_array ,labels=range(len(bin_array)-1) , include_lowest=True )
+
+	df_state['ratioD'] =  get_exponential_ratio( df_state['Date'], 
+	                                            df_state['Deaths'],
+	                                            df_state['State'], 
+	                                            averaging_period )  
+	df_state['doublingD'] = pd.cut( df_state['ratioD'],   bin_array ,labels=range(len(bin_array)-1) , include_lowest=True )
+
+  
+ 
+
+	# df_state add missing dates, still to turn into function 
+
+	dates_unique =   df_state['Date'].unique()
+	dates = df_state['Date'].unique()
+	state_list =  df_state['State'].unique()  
+	 
+
+	# # find missing dates 
+	for state in state_list:
+	#     bool_state = df_state['State'] == state 
+	    for date in dates:
+	        bool_state = df_state['State'] == state 
+	        subframe = df_state.loc[bool_state,'Date'].tolist() 
+	        if date not in subframe : 
+	            append_series = pd.Series({'State':state,'Date':date,'Active':0,'Confirmed':0,'Deaths':0,'Recovered':0})
+	            df_state = df_state.append( append_series, ignore_index=True)
+	  
+	# subframe
+	# bool_state = df_state['State'] == 'Alabama'
+	# df_state[bool_state].sort_values(by=['Date'])
+	 
+	    
+	df_state = df_state.sort_values( by=['State','Date']).reset_index(drop=True) 
+	# datetime.datetim   
+
+
+
+
+
+	# something broken here, still to fix ------------------------------------------------
+
+	df_state['Daily Confirmed'] = find_daily_cases( df_state['Date'] , df_state['Confirmed'] )
+	df_state['Daily Deaths'] = find_daily_cases( df_state['Date'] , df_state['Deaths'] )
+ 
+	df_state['Measure'] = add_measures_column( 'measures_per_state.csv', 
+	                                            df_state['Date'] ,
+	                                            df_state['State'])
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
  
@@ -536,5 +924,456 @@ if __name__ == '__main__':
 	            bbox_inches = 'tight', pad_inches = 0,
 	            )  
 
+
+
+
+	#------------------map plot 
+	fig, ax = plt.subplots(1,1 ,figsize=half_w)
+
+	wp = world.plot(column='Cases', ax=ax, cmap='OrRd' );
+
+	wp.set_xbound(-161,161)
+	wp.set_ybound(-57,85) 
+
+	vmin =   world['Cases'].min()  
+	vmax =  world['Cases'].max() 
+	sm = plt.cm.ScalarMappable(cmap='OrRd', norm=plt.Normalize(vmin=vmin, vmax=vmax))
+  
+	sm._A = []
+	cax = fig.add_axes([0.2, 0.2, 0.6, 0.03])
+	cb = fig.colorbar(sm, cax=cax, orientation='horizontal')
+ 
+
+	tick_array =  [1,10,100,1000,10000, 50000 ] 
+	log_cases = np.log( tick_array  )  
+	cb.set_ticks( log_cases ) 
+	cb.set_ticklabels( tick_array) 
+	cb.set_label(' Daily case increaes  \n (average over last 7 days)')
+	 
+	ax.axis("off")
+
+	ax.annotate('Updated '+str( df_country['Date'].iloc[-1]), 
+	            [-161,-57], color=[.3,.3,.3], style='italic',fontsize=8)
+	fig_name= 'covid_map'
+	save_fig = True
+	if save_fig: 
+	    plt.savefig('./figs/' + fig_name + '.png',
+	            format='png', dpi=300,
+	            transparent=  True,             
+	            bbox_inches = 'tight', pad_inches = 0,
+	            )  
+
+
+	#-----daily cases worldwide-----------------------------------------------------
+	df_pl = df_country.groupby( 'Date').sum() 
+	df_pl['Date'] = df_pl.index  
+
+	fig, ax = plt.subplots(1 ,2,figsize=(full_w[0],4))
+
+	ax[0] = plot_daily( ax[0] , df_pl['Date'], df_pl['Daily Confirmed'] )
+	ax[1] = plot_daily( ax[1] , df_pl['Date'], df_pl['Daily Death'] )
+
+	ax[0].set_title('Worldwide Daily Confirmed')
+	ax[1].set_title('Worldwide Daily Deaths')  
+	ax[0].legend( )
+
+
+	fig_name= 'covid_world_dailycases'
+	save_fig = True
+	if save_fig: 
+	    plt.savefig('./figs/' + fig_name + '.png',
+	            format='png', dpi=300,
+	            transparent=  True,             
+	            bbox_inches = 'tight', pad_inches = 0,
+	            )   
+	#-----daily cases per country-----------------------------------------------------
+
+	# sort countries by confirmed cases on last date
+	bool_last = df_country['Date'] == df_country['Date'].max()
+	sorted_countries = df_country[bool_last].sort_values(by=['Confirmed'], ascending=False )    
+	sorted_countries.head(5)  
+ 
+	n_countries = 12
+	top_countries = sorted_countries['Country/Region'][:n_countries].tolist()
+
+
+	days = df_country['Date' ].unique() 
+
+	dates = df_pl['Date' ].unique() 
+	fig, ax = plt.subplots(n_countries ,2,figsize=( full_w[0],n_countries*3))
+	 
+	for i,country in enumerate( top_countries ):
+	    df_pl = df_country[ df_country['Country/Region'] == country] 
+	    
+	    bool_measure = df_pl['Measure'].notnull() 
+	    measures= df_pl.loc[bool_measure,['Measure','Date']] 
+	     
+	    plot_daily( ax[i,0] , df_pl['Date'], df_pl['Daily Confirmed'], measures)
+	    plot_daily( ax[i,1] , df_pl['Date'], df_pl['Daily Death'],measures)
+	 
+	    # add comparison lines  
+	    ax[i,0].plot( dates[[0,len(days)-1]], [1000,1000],'--',color='k', alpha = 0.5 )
+	    ax[i,1].plot( dates[[0,len(days)-1]], [25,25],'--',color='k', alpha = 0.5 ) 
+	    ax[i,0].set_ylabel( country )
+	      
+	ax[0,0].set_title('Daily Confirmed')
+	ax[0,1].set_title('Daily Deaths') 
+
+	# reverse the order 
+	ax[0,0].legend(  ax[0,0].get_legend_handles_labels()[0][::-1] , 
+	               ax[0,0].get_legend_handles_labels()[1] [::-1],
+	               bbox_to_anchor=(0.42, .7))
+
+
+	ax[0,0].annotate('1000 cases',[dates[0],1000*1.5])
+	ax[0,1].annotate('25 deaths',[dates[0],25*1.5])
+
+
+	ax[0,0].annotate('Updated '+str( df_country['Date'].iloc[-1]), 
+	            [dt.date2num( dates[0] ) ,df_country['Daily Confirmed'].max()*(0.94-0.12)], 
+	                 color=[.3,.3,.3], style='italic',fontsize=8)
+
+	fig_name= 'covid_country_dailycases'
+	save_fig = True
+	if save_fig: 
+	    plt.savefig('./figs/' + fig_name + '.png',
+	            format='png', dpi=300,
+	            transparent=  True,             
+	            bbox_inches = 'tight', pad_inches = 0,
+	            )  
+
+
+
+
+
+	# -----------state plots
+ 
+
+	# 	# plot states log -----------------------------
+
+	try_bool = df_state.groupby('State').max()['Delta C'] > 0 
+	threshold_states = try_bool.index[try_bool].tolist()
+	notable_states = ['New York','New Jersey','Michigan',"California",
+				'Washington','Louisiana','Georgia','Utah' ]
+
+	fig, ax = plt.subplots(1,1 ,figsize= full_w )  
+	    
+	xCmax = df_state['Delta C'].max()
+	yCmax = df_state['Confirmed'].max()
+
+	for state in threshold_states:
+	    bool_state = df_state['State'] == state 
+	    df_pl = df_state[bool_state] 
+	    
+	    doubling_category = df_pl['doubling'].iloc[0]
+	    pl1 = ax.plot( df_pl['Delta C' ],  df_pl['Confirmed'],
+	            '.-' ,ms=3,lw=1.5, label=state,
+	               color = cols[doubling_category])
+	      
+	    y = df_pl['Confirmed'].iloc[-1]*0.98
+	    x = df_pl['Delta C'].iloc[-1] + 0.5      
+	       
+	    if (state in notable_states) & (0 <=  x <= xCmax+10) & (10<= y <= yCmax*2): 
+	        t = ax.text(x,y,state, ha="left", va="center" ,  bbox=bbox_props)
+	         
+	ax.set_yscale('log') 
+	ax.grid(True,which="major", linestyle='-')  
+	ax.grid(True,which="minor", linestyle=':', color=[.5,.5,.5],linewidth=0.6)   
+	 
+	ax.yaxis.set_ticks( tick_list )
+	ax.yaxis.set_ticklabels( tick_label_list)
+
+	ax.set_xlim([0,xCmax+5])
+	ax.set_ylim([100,yCmax*2])
+
+	ax.set_xlabel("Days since passing "+ str(threshold_cases) + " confirmed cases") 
+	ax.set_ylabel("Confirmed cases") 
+
+	ax.annotate('Last update: '+str( df_state['Date'].iloc[-1]), 
+	            [.3,round(yCmax,5)*1.1], color=[.5,.5,.5], style='italic')
+
+	# cmap = ListedColormap(cols)
+	xy = []
+	sc = plt.scatter(xy, xy, c=xy, vmin=0, vmax=1, cmap=cmap)
+	cax = fig.add_axes([0.65, 0.19, 0.2, 0.02])
+	cb = plt.colorbar(sc, cax = cax, orientation='horizontal') 
+
+	cb.set_ticks(np.linspace(1/6,1,6)) 
+	cb.set_ticklabels(bin_tick_labels) 
+	cb.set_label('Doubling time in days (average over last 3)')
+	cb.outline.set_visible(False)
+
+	cb.ax.tick_params(which='major', length=15, width=1, direction='in',color='w')
+
+	fig_name= 'covid_state_caseslog'
+	save_fig = True
+	if save_fig: 
+	    plt.savefig('./figs/' + fig_name + '.png',
+	            format='png', dpi=300,
+	            transparent=  True,             
+	            bbox_inches = 'tight', pad_inches = 0,
+	            )  
+
+
+	# plot states deaths--------------------------------------------
+	notable_states =   ['New York','New Jersey','Michigan',"California",'Washington','Louisiana',"Florida","Oregon"]
+
+	fig, ax = plt.subplots(1,1 ,figsize= full_w )  
+	     
+	xDmax = df_state['Delta D'].max()
+	yDmax = df_state['Deaths'].max()
+
+	for state in threshold_states:
+	    bool_state = df_state['State'] == state 
+	    df_pl = df_state[bool_state] 
+	    
+	    doubling_category = df_pl['doublingD'].iloc[0]
+	    pl1 = ax.plot( df_pl['Delta D' ],  df_pl['Deaths'],
+	            '.-' ,ms=3,lw=1.5, label=state,
+	               color = cols[doubling_category])
+	       
+	    y = df_pl['Deaths'].iloc[-1]*0.98
+	    x = df_pl['Delta D'].iloc[-1] + 0.5         
+	        
+	    if (state in notable_states) & (0 <=  x <= xCmax+10) & (10<= y <= yCmax*2): 
+	        t = ax.text(x,y,state, ha="left", va="center" ,  bbox=bbox_props)
+	          
+	ax.set_yscale('log') 
+	ax.grid(True,which="major", linestyle='-')  
+	ax.grid(True,which="minor", linestyle=':', color=[.5,.5,.5],linewidth=0.6)   
+
+	ax.yaxis.set_ticks( tick_list )
+	ax.yaxis.set_ticklabels( tick_label_list)
+
+	ax.set_xlim([0,xDmax+5])
+	ax.set_ylim([10,yDmax*2])
+
+	ax.set_xlabel("Days since passing "+ str(threshold_deaths)+ " confirmed cases") 
+	ax.set_ylabel("Confirmed deaths") 
+
+	ax.annotate('Last update: '+str( df_state['Date'].iloc[-1]), 
+	            [.3,round(yDmax,5)*1.1], color=[.5,.5,.5], style='italic')
+
+	# cmap = ListedColormap(cols)
+	xy = []
+	sc = plt.scatter(xy, xy, c=xy, vmin=0, vmax=1, cmap=cmap)
+	cax = fig.add_axes([0.65, 0.19, 0.2, 0.02])
+	cb = plt.colorbar(sc, cax = cax, orientation='horizontal') 
+
+	cb.set_ticks(np.linspace(1/6,1,6)) 
+	cb.set_ticklabels(bin_tick_labels) 
+	cb.set_label('Doubling time in days (average over last 3)')
+	cb.outline.set_visible(False)
+
+	cb.ax.tick_params(which='major', length=15, width=1, direction='in',color='w')
+
+	fig_name= 'covid_state_deathslog'
+	save_fig = True
+	if save_fig: 
+	    plt.savefig('./figs/' + fig_name + '.png',
+	            format='png', dpi=300,
+	            transparent=  True,             
+	            bbox_inches = 'tight', pad_inches = 0,
+	            )  
+
+
+
+
+
+
+	# # plot daily for US, by state data-----------------------------
+	# df_pl = df_state.groupby( 'Date').sum() 
+	# df_pl['Date'] = df_pl.index  
+
+	# fig, ax = plt.subplots(1 ,2,figsize=(full_w[0] ,4))
+
+	# ax[0] = plot_daily( ax[0] , df_pl['Date'], df_pl['Daily Confirmed'] )
+	# ax[1] = plot_daily( ax[1] , df_pl['Date'], df_pl['Daily Deaths'] )
+
+	# ax[0].set_title('US Daily Confirmed')
+	# ax[1].set_title('US Daily Deaths')  
+	# ax[0].legend( ax[0].get_legend_handles_labels()[0][::-1] , ax[0].get_legend_handles_labels()[1] [::-1])
+
+	 
+
+	#  # plot daily per state
+	# bool_last = df_state['Date'] == df_state['Date'].max()
+	# sorted_states = df_state[bool_last].sort_values(by=['Confirmed'], ascending=False )    
+	# sorted_states.head(5)  
+
+	# n_state = 12
+	# top_state = sorted_states['State'][:n_state].tolist()
+
+	# dates = df_pl['Date' ].unique() 
+	# fig, ax = plt.subplots(n_state ,2,figsize=( full_w[0] ,n_state*3))
+
+	# n_correction = 1
+
+	# for i,country in enumerate( top_state ):
+	#     df_pl = df_state[ df_state['State'] == country]
+	    
+	#     bool_measure = df_pl['Measure'].notnull() 
+	#     measures= df_pl.loc[bool_measure,['Measure','Date']] 
+	     
+	#     plot_daily( ax[i,0] , df_pl['Date'], df_pl['Daily Confirmed'], measures)
+	#     plot_daily( ax[i,1] , df_pl['Date'], df_pl['Daily Deaths'],measures)
+	 
+	#     # add comparison lines  
+	#     ax[i,0].plot( dates[[0,len(days)-1]], [1000,1000],'--',color='k', alpha = 0.5 )
+	#     ax[i,1].plot( dates[[0,len(days)-1]], [25,25],'--',color='k', alpha = 0.5 ) 
+	#     ax[i,0].set_ylabel( country )
+	       
+	# ax[0,0].set_title('Daily Confirmed')
+	# ax[0,1].set_title('Daily Deaths') 
+
+	# ax[0,0].legend(  ax[0,0].get_legend_handles_labels()[0][::-1] , 
+	#                ax[0,0].get_legend_handles_labels()[1] [::-1],
+	#                bbox_to_anchor=(0.42, .7))
+
+	# ax[0,0].annotate('1000 cases',[dates[0],1000*1.5])
+	# ax[0,1].annotate('25 deaths',[dates[0],25*1.5])
+
+
+	# ax[0,0].annotate('Updated '+str(  dt.num2date(dates[-1]).date()  ), 
+	#             [dates[0], df_state['Daily Confirmed'].max()*(0.94-0.1)], 
+	#                 color=[.3,.3,.3], style='italic',fontsize=8)
+
+	# fig_name= 'covid_states_dailycases'
+	# save_fig = True
+	# if save_fig: 
+	#     plt.savefig('./figs/' + fig_name + '.png',
+	#             format='png', dpi=300,
+	#             transparent=  True,             
+	#             bbox_inches = 'tight', pad_inches = 0,
+	#             )  
+
+
+
+
+
+
+	# # plot country map ------------------------------------------
+
+	# bool_US = df['Country/Region'] =='US' 
+	# # bool_last = df['Date'] > datetime.datetime(2020,3,22).date() 
+	# bool_last = df['Date'] > datetime.datetime(2020,3,23).date()
+	 
+	# df_US = df[bool_US & bool_last ].copy() 
+	 
+	# df_US =  df_US.groupby(['Province/State','Date']).sum().reset_index()  
+	# df_US = df_US.sort_values( by=['Province/State','Date']).reset_index(drop=True)  
+
+
+	# import geopandas as gpd
+
+    
+	# US = gpd.read_file( 'geo_data\states.shp')
+	# AKratio = 0.4;  # scales Alaska 
+	# HIratio = 1.3 # scales Hawai 
+	# AKtrans = [25,-33] # moves Alaska south and east 
+	# HItrans = [34,4] # moves Hawaii east and north 
+	 
+	# import shapely.affinity as shp
+
+	# # get original polygons
+	# bool_alaska = US['STATE_NAME'] == 'Alaska'
+	# alaska_geom = US.loc[bool_alaska,'geometry'].iloc[0] 
+
+	# alaska_moved = shp.translate(alaska_geom, AKtrans[0], AKtrans[1])  
+	# centroid = alaska_moved.centroid
+	# alaska_scaled = shp.scale( alaska_moved, xfact=AKratio, yfact=AKratio, origin=centroid)
+	# US['geometry'][50] =  alaska_scaled
+
+	# bool_hawaii = US['STATE_NAME'] == 'Hawaii'
+	# hawaii_geom = US.loc[bool_hawaii,'geometry'].iloc[0] 
+
+	# hawaii_moved = shp.translate(hawaii_geom, HItrans[0], HItrans[1])  
+	# centroid = hawaii_moved.centroid
+	# hawaii_scaled = shp.scale( hawaii_moved, xfact=HIratio, yfact=HIratio, origin=centroid)
+	# US['geometry'][0] =  hawaii_scaled
+ 
+	# US.plot()
+	 
+ 
+	# # states = US['STATE_NAME'].tolist()
+	# states = df_US['Province/State'].unique().tolist()
+	# dates = df_US['Date'].unique() 
+
+	# for state in states: 
+	# #     print(state)
+	#     bool_state = df_US['Province/State'] == state 
+	#     bool_date = df_US['Date'] == dates[-1]
+	#     bool_prior = df_US['Date'] == dates[-7] 
+	#     if (bool_state & bool_date).sum() > 0:
+	#         now_cases = df_US[bool_state & bool_date ]['Confirmed'].iloc[0]
+	#         prior_cases = df_US[bool_state & bool_prior ]['Confirmed'].iloc[0]
+	#         latest_cases = (now_cases-prior_cases)/7
+	#     else:
+	#         latest_cases = 0 
+	         
+	#     df_US.loc[bool_state ,'Cases'] = np.log(latest_cases + 2)
+	    
+	    
+	# # US['Cases'] = 0 
+	# df_US = df_US.rename(columns={'Province/State':'STATE_NAME'}) 
+
+	# df_US = df_US[bool_date] 
+	# US= pd.merge(US, df_US, how='left', on=['STATE_NAME'])
+	# df_US.head()  
+
+
+
+	# # fig, ax = plt.subplots(1,1 ,figsize=(15,8))
+	# fig, ax = plt.subplots(1,1 ,figsize=half_w )
+
+
+	# wp = US.plot(column='Cases', ax=ax, cmap='OrRd'   );
+
+	# wp.set_xbound(-135,-66)
+	# wp.set_ybound(20,49.5)  
+	 
+
+	# vmin =    US['Cases'].min()
+	# vmax =  ( US['Cases'].max() )
+	 
+	# sm = plt.cm.ScalarMappable(cmap='OrRd', norm=plt.Normalize(vmin=vmin, vmax=vmax)) 
+	 
+
+
+
+	# # fake up the array of the scalar mappable. Urgh...
+	# sm._A = []
+	# cax = fig.add_axes([0.2, 0.25, 0.6, 0.03])
+	# cb = fig.colorbar(sm, cax=cax, orientation='horizontal')
+	 
+
+	# # tick_array =  [1,10,100,1000,10000,10000] 
+	# tick_array =  [20,40,100,400,1000,4000,10000 ] 
+	# log_cases = np.log( tick_array  )  
+	# cb.set_ticks( log_cases ) 
+	# cb.set_ticklabels( tick_array) 
+	# cb.set_label(' Daily case increaes  \n (average over last 7 days)')
+
+	# ax.axis("off")
+
+
+	# ax.annotate('Updated '+str( df_US['Date'].iloc[-1]), 
+	#             [-135,22 ], color=[.3,.3,.3], style='italic',fontsize=8)
+
+	# # # # # # save fig  -----------------------------------------------------------------------
+	# fig_name= 'covid_state_map'
+	# save_fig = True
+	# if save_fig: 
+	#     plt.savefig('./figs/' + fig_name + '.png',
+	#             format='png', dpi=300,
+	#             transparent=  True,             
+	#             bbox_inches = 'tight', pad_inches = 0,
+	#             )   
+
+
+
+
+
 	# show all figures ----------------------------------
 	plt.show()
+
