@@ -1240,7 +1240,7 @@ if __name__ == '__main__':
 		ax[0,0].annotate('Updated '+str( df_state['Date'].iloc[-1]), 
 		            [6, 120], color=[.3,.3,.3], style='italic',fontsize=8)
 
-		fig_name= 'covid_country_casesHighlightLog' 
+		fig_name= 'covid_states_casesHighlightLog' 
 		if save_fig: 
 		    plt.savefig('./figs/' + fig_name + '.png',
 		            format='png', dpi=300,
@@ -1293,7 +1293,7 @@ if __name__ == '__main__':
 		ax[0,0].annotate('Updated '+str( df_state['Date'].iloc[-1]), 
 		            [6, 12 ], color=[.3,.3,.3], style='italic',fontsize=8)
 
-		fig_name= 'covid_country_deathsHighlightLog' 
+		fig_name= 'covid_states_deathsHighlightLog' 
 		if save_fig: 
 		    plt.savefig('./figs/' + fig_name + '.png',
 		            format='png', dpi=300,
