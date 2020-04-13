@@ -4,9 +4,29 @@ import numpy as np
 from datetime import timedelta  
 import matplotlib.dates as dt      
 import glob
+ 
+#-----------functions----------------------------------------------------------
 
-
-state_dict = {
+def replace_state( x):
+    
+    error_dict = {'Chicago':'Illinois',
+            'NE (From Diamond Princess)':'Nebraska',
+            'CA (From Diamond Princess)':'California',
+            'TX (From Diamond Princess)':'Texas',
+            'Unassigned Location (From Diamond Princess)':'Other',
+            'D.C.':'District of Columbia',
+            'Puerto Rico':'Other',
+            'Guam':'Other',
+            'U.S.':'Other',
+            'US':'Other',
+            'Virgin Islands':'Other',
+            'United States Virgin Islands':'Other',
+            'Wuhan Evacuee':'Other',
+            'American Samoa':'Other',
+            'Northern Mariana Islands':'Other', 
+            'OR ':'Oregon'} 
+    
+    state_dict = {
         'AK': 'Alaska',
         'AL': 'Alabama',
         'AR': 'Arkansas',
@@ -64,29 +84,8 @@ state_dict = {
         'WI': 'Wisconsin',
         'WV': 'West Virginia',
         'WY': 'Wyoming'
-}
-
-
-
-def replace_state( x):
-    
-    error_dict = {'Chicago':'Illinois',
-            'NE (From Diamond Princess)':'Nebraska',
-            'CA (From Diamond Princess)':'California',
-            'TX (From Diamond Princess)':'Texas',
-            'Unassigned Location (From Diamond Princess)':'Other',
-            'D.C.':'District of Columbia',
-            'Puerto Rico':'Other',
-            'Guam':'Other',
-            'U.S.':'Other',
-            'US':'Other',
-            'Virgin Islands':'Other',
-            'United States Virgin Islands':'Other',
-            'Wuhan Evacuee':'Other',
-            'American Samoa':'Other',
-            'Northern Mariana Islands':'Other', 
-            'OR ':'Oregon'} 
-    
+        }
+ 
     state_entry = x['Province/State'].split(", ")[-1] 
     if state_entry in  state_dict.keys(): 
         new =  state_dict[ state_entry]  
