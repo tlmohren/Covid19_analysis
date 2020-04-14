@@ -95,7 +95,7 @@ def replace_state( x):
         new = state_entry   
     return new 
 
-
+  
 def load_daily_reports( file_path):
     
     daily_reports = glob.glob(file_path + '\*.csv') 
@@ -142,14 +142,12 @@ def process_daily_data( df_daily):
     df_daily = df_daily[col_order]
     
     bool_US = df_daily['Country/Region'] =='US'
-    df_US = df_daily[bool_US ]
-
-    df_US.loc[:,'State'] = df_US.copy().apply( replace_state, axis=1)
-    
-    df_state =  df_US.groupby(['State','Date']).sum().reset_index()
-  
-    df_state = df_state.sort_values(by=['State','Date'], ascending=True )  
-    df_state.head() 
+    df_US = df_daily[bool_US ].copy()
+ 
+    df_US.loc[:,'State'] = df_US.apply( replace_state, axis=1) 
+ 
+    df_state =  df_US.groupby(['State','Date']).sum().reset_index() 
+    df_state = df_state.sort_values(by=['State','Date'], ascending=True )   
  
     # drop some states
     bool_other = df_state['State'].str.contains( 'Other' , regex=False) 

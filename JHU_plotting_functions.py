@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 import matplotlib.dates as mdates   
 from matplotlib.dates import date2num       #-->Update   
 import numpy as np
+import os
 
 def smooth(x,window_len=11,window='hanning'):
   
@@ -22,8 +23,7 @@ def plot_highlight( ax_p, goal_country, date_series, value_series, region_series
 	countries_to_highlight, threshold_cases): 
 
     dot_col = np.ones((3))*0.8 
-    emph_col = [0.5,0.5,0.5] 
-    # goal_col = "#e74c3c"
+    emph_col = [0.5,0.5,0.5]  
     goal_col = "r"
     dot_alpha = 1 
 
@@ -148,5 +148,12 @@ def plot_daily( ax_p, date_col, data_series, measures = pd.DataFrame() ):
 
 
 
-
-
+def save_fig( figs_dir, fig_name ): 
+    
+    fig_fullname = os.path.join( figs_dir, fig_name ) 
+    print('Saving to: ' + fig_fullname + '.png') 
+    plt.savefig( fig_fullname+ '.png',
+            format='png', dpi=300,
+            transparent=  True,             
+            bbox_inches = 'tight', pad_inches = 0, 
+               ) 

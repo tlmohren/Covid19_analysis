@@ -9,18 +9,23 @@ import json
 import matplotlib.dates as dt    
 import geopandas as gpd
 import datetime
-# import geopandas as gpd
+
 import shapely.affinity as shp
 import glob
-import JHU_data_processing as dp
-import JHU_plotting as jp
+import JHU_dataprocessing_functions as dp
+import JHU_plotting_functions as jp
+import os
 
 ####--------------------parameters --------------------------------------
 plot_country = True
 plot_states = True
 save_fig = True
-show_plot = True
+show_plot = False
+
+figs_path = os.path.join( os.getcwd(), 'figs') 
  
+daily_path = r'D:\Code_projects\Covid19_analysis\COVID-19\csse_covid_19_data\csse_covid_19_daily_reports'
+
 # figure size
 full_w = (12,7)
 half_w = (6,4) 
@@ -60,21 +65,17 @@ bin_array = np.array( [-1, 2.**(1./20), 2.**(1./15), 2.**(1./10), 2.**(1./7), 2.
 bin_labels = ['20','15','10','7','5' ]
 
 dot_col = np.ones((3))*0.8 
-emph_col = [0.5,0.5,0.5] 
-# goal_col = "#e74c3c"
+emph_col = [0.5,0.5,0.5]  
 goal_col = "r"
 dot_alpha = 1 
 
 
- 
-
-# ####------------------run plotting script--------------------------------------
+  
 if __name__ == '__main__':
 	print('run script directly') 
-
-
+ 
 	# ---------------------------------------------------------
-	# --------------merge and data processing------------------
+	# --------------merge and process data---------------------
 	# ---------------------------------------------------------
 
 	path = r'D:\Code_projects\Covid19_analysis\COVID-19\csse_covid_19_data\csse_covid_19_time_series'
@@ -175,13 +176,9 @@ if __name__ == '__main__':
 	    world.loc[bool_world,'Cases'] = np.log(latest_cases+1) 
 
 
+ 
 
-
-
-
-
-	# state data import and process  
-	daily_path = r'D:\Code_projects\Covid19_analysis\COVID-19\csse_covid_19_data\csse_covid_19_daily_reports'
+	# state data import and process -------------------------------------------
 
 	df_daily = dp.load_daily_reports( daily_path )
  
@@ -230,12 +227,7 @@ if __name__ == '__main__':
 	                                df_state['State'] , 
 	                                threshold_deaths)
   
-	# # find ratio and doubling # days
-	# averaging_period = 3
-
-	# bin_array = np.array( [-1, 2.**(1./8), 2.**(1./7), 2.**(1./6), 2.**(1./5), 2.**(1./4) ,np.inf ]) 
-	# bin_tick_labels = ['8','7','6','5','4']
-
+	# # find ratio and doubling # days  
 	df_state['ratio'] =  dp.get_exponential_ratio( df_state['Date'], 
 	                                            df_state['Confirmed'],
 	                                            df_state['State'], 
@@ -250,14 +242,10 @@ if __name__ == '__main__':
 	                                            averaging_period )  
 	df_state['doublingD'] = pd.cut( df_state['ratioD'],   bin_array ,labels=range(len(bin_array)-1) , include_lowest=True )
  
-
-
-
+ 
 	try_bool = df_state.groupby('State').max()['Delta C'] > 0 
 	threshold_states = try_bool.index[try_bool].tolist()
- 
-
- 
+  
 	# something broken here, still to fix ------------------------------------------------
 
 	df_state = df_state.sort_values( by=['State','Date']).reset_index(drop=True) 
@@ -265,16 +253,13 @@ if __name__ == '__main__':
 
 	df_state['Daily Confirmed'] = dp.find_daily_cases( df_state['Date'] , df_state['Confirmed'] )
 	df_state['Daily Deaths'] = dp.find_daily_cases( df_state['Date'] , df_state['Deaths'] )
- 
-	# df_state['Date']  = df_state['Date'].apply(date2num)      #-->Update
-
+  
 	df_state['Measure'] = dp.add_measures_column( 'measures_per_state.csv', 
 	                                            df_state['Date'] ,
 	                                            df_state['State'])
 
 
-
-  
+ 
  
 	# ---------------------------------------------------------
 	# --------------plotting country   ------------------------ 
@@ -335,11 +320,7 @@ if __name__ == '__main__':
 	 
 		fig_name= 'covid_country_caseslog' 
 		if save_fig: 
-		    plt.savefig('./figs/' + fig_name + '.png',
-		            format='png', dpi=300,
-		            transparent=  True,             
-		            bbox_inches = 'tight', pad_inches = 0,
-		            ) 
+			jp.save_fig( figs_path, fig_name) 
 
 		# -------------------country deaths ---------------------------------------------------- 
 		fig, ax = plt.subplots(1,1 ,figsize= full_w )
@@ -389,11 +370,7 @@ if __name__ == '__main__':
 
 		fig_name= 'covid_country_deathslog' 
 		if save_fig: 
-		    plt.savefig('./figs/' + fig_name + '.png',
-		            format='png', dpi=300,
-		            transparent=  True,             
-		            bbox_inches = 'tight', pad_inches = 0,
-		            )  
+			jp.save_fig( figs_path, fig_name) 
 
 		# ----------------plot grid of highlights-------------------------------------------------------
 	 
@@ -442,11 +419,7 @@ if __name__ == '__main__':
 
 		fig_name= 'covid_country_casesHighlightLog' 
 		if save_fig: 
-		    plt.savefig('./figs/' + fig_name + '.png',
-		            format='png', dpi=300,
-		            transparent=  True,             
-		            bbox_inches = 'tight', pad_inches = 0,
-		            )  
+			jp.save_fig( figs_path, fig_name) 
 
 		# plot deaths highlight ------------------------------------------
 		notable_countries = ['US','Japan','China','Italy' ,'Korea, South' ]
@@ -492,11 +465,7 @@ if __name__ == '__main__':
 
 		fig_name= 'covid_country_deathsHighlightLog' 
 		if save_fig: 
-		    plt.savefig('./figs/' + fig_name + '.png',
-		            format='png', dpi=300,
-		            transparent=  True,             
-		            bbox_inches = 'tight', pad_inches = 0,
-		            )  
+			jp.save_fig( figs_path, fig_name) 
 
 
 
@@ -530,11 +499,7 @@ if __name__ == '__main__':
 		            [-161,-57], color=[.3,.3,.3], style='italic',fontsize=8)
 		fig_name= 'covid_map' 
 		if save_fig: 
-		    plt.savefig('./figs/' + fig_name + '.png',
-		            format='png', dpi=300,
-		            transparent=  True,             
-		            bbox_inches = 'tight', pad_inches = 0,
-		            )  
+			jp.save_fig( figs_path, fig_name) 
 
 
 		#-----daily cases worldwide-----------------------------------------------------
@@ -553,11 +518,7 @@ if __name__ == '__main__':
 
 		fig_name= 'covid_world_dailycases' 
 		if save_fig: 
-		    plt.savefig('./figs/' + fig_name + '.png',
-		            format='png', dpi=300,
-		            transparent=  True,             
-		            bbox_inches = 'tight', pad_inches = 0,
-		            )   
+			jp.save_fig( figs_path, fig_name) 
 		#-----daily cases per country-----------------------------------------------------
 
 		# sort countries by confirmed cases on last date
@@ -607,11 +568,7 @@ if __name__ == '__main__':
 
 		fig_name= 'covid_country_dailycases' 
 		if save_fig: 
-		    plt.savefig('./figs/' + fig_name + '.png',
-		            format='png', dpi=300,
-		            transparent=  True,             
-		            bbox_inches = 'tight', pad_inches = 0,
-		            )  
+			jp.save_fig( figs_path, fig_name) 
 
 
 
@@ -685,11 +642,7 @@ if __name__ == '__main__':
 
 		fig_name= 'covid_state_caseslog' 
 		if save_fig: 
-		    plt.savefig('./figs/' + fig_name + '.png',
-		            format='png', dpi=300,
-		            transparent=  True,             
-		            bbox_inches = 'tight', pad_inches = 0,
-		            )  
+			jp.save_fig( figs_path, fig_name) 
 
 
 		# plot states deaths--------------------------------------------
@@ -730,8 +683,7 @@ if __name__ == '__main__':
 
 		ax.annotate('Last update: '+str( df_state['Date'].iloc[-1]), 
 		            [.3,round(yDmax,5)*1.1], color=[.5,.5,.5], style='italic')
-
-		# cmap = ListedColormap(cols)
+ 
 		xy = []
 		sc = plt.scatter(xy, xy, c=xy, vmin=0, vmax=1, cmap=cmap)
 		cax = fig.add_axes([0.65, 0.19, 0.2, 0.02])
@@ -746,25 +698,15 @@ if __name__ == '__main__':
 
 		fig_name= 'covid_state_deathslog' 
 		if save_fig: 
-		    plt.savefig('./figs/' + fig_name + '.png',
-		            format='png', dpi=300,
-		            transparent=  True,             
-		            bbox_inches = 'tight', pad_inches = 0,
-		            )  
-
- 
-
+			jp.save_fig( figs_path, fig_name)  
 
 	# ----------------plot grid of highlights-------------------------------------------------------
-	 
 		# sort states by confirmed cases on last date
 		bool_last = df_state['Date'] == df_state['Date'].max()
 		sorted_states = df_state[bool_last].sort_values(by=['Confirmed'], ascending=False )     
 		sorted_names = sorted_states['State'].tolist()
 
-
 		notable_states = ['New York', 'Washington'  ]
-
 
 		dy = 3
 		dx = 6
@@ -805,18 +747,10 @@ if __name__ == '__main__':
 
 		fig_name= 'covid_states_casesHighlightLog' 
 		if save_fig: 
-		    plt.savefig('./figs/' + fig_name + '.png',
-		            format='png', dpi=300,
-		            transparent=  True,             
-		            bbox_inches = 'tight', pad_inches = 0,
-		            )  
+			jp.save_fig( figs_path, fig_name) 
  
 	# ----------------plot grid of deaths highlights-------------------------------------------------------
-  
-		# bool_last = df_state['Date'] == df_state['Date'].max()
-		# sorted_states = df_state[bool_last].sort_values(by=['Confirmed'], ascending=False )     
-		# sorted_names = sorted_states['State'].tolist() 
-
+   
 		notable_states = ['New York' ,'Washington', 'California' ]
  
 		dy = 3
@@ -859,11 +793,7 @@ if __name__ == '__main__':
 
 		fig_name= 'covid_states_deathsHighlightLog' 
 		if save_fig: 
-		    plt.savefig('./figs/' + fig_name + '.png',
-		            format='png', dpi=300,
-		            transparent=  True,             
-		            bbox_inches = 'tight', pad_inches = 0,
-		            )  
+			jp.save_fig( figs_path, fig_name) 
  
 		# # plot daily for US, by state data-----------------------------
 		df_pl = df_state.groupby( 'Date').sum() 
@@ -878,8 +808,7 @@ if __name__ == '__main__':
 		ax[1].set_title('US Daily Deaths')  
 		ax[0].legend( ax[0].get_legend_handles_labels()[0][::-1] , ax[0].get_legend_handles_labels()[1] [::-1])
 
-		 
-
+		  
 		 # plot daily per state
 		bool_last = df_state['Date'] == df_state['Date'].max()
 		sorted_states = df_state[bool_last].sort_values(by=['Confirmed'], ascending=False )    
@@ -923,19 +852,12 @@ if __name__ == '__main__':
 
 		fig_name= 'covid_states_dailycases'
 		if save_fig: 
-		    plt.savefig('./figs/' + fig_name + '.png',
-		            format='png', dpi=300,
-		            transparent=  True,             
-		            bbox_inches = 'tight', pad_inches = 0,
-		            )  
+			jp.save_fig( figs_path, fig_name) 
 
  
 		# plot country map ------------------------------------------
-
-
-		path = r'D:\Code_projects\Covid19_analysis\COVID-19\csse_covid_19_data\csse_covid_19_daily_reports'
-
-		daily_reports = glob.glob(path + '\*.csv') 
+ 
+		daily_reports = glob.glob(daily_path  + '\*.csv') 
 		df = pd.DataFrame()
 		for file in daily_reports :
 		    df_temp = pd.read_csv( file, index_col=None, header=0) 
@@ -973,24 +895,31 @@ if __name__ == '__main__':
 		HIratio = 1.3 # scales Hawai 
 		AKtrans = [25,-33] # moves Alaska south and east 
 		HItrans = [34,4] # moves Hawaii east and north 
-		 
-
+		  
 		# get original polygons
 		bool_alaska = US['STATE_NAME'] == 'Alaska'
+		alaska_object = US.loc[bool_alaska,'geometry']
 		alaska_geom = US.loc[bool_alaska,'geometry'].iloc[0] 
 
 		alaska_moved = shp.translate(alaska_geom, AKtrans[0], AKtrans[1])  
 		centroid = alaska_moved.centroid
 		alaska_scaled = shp.scale( alaska_moved, xfact=AKratio, yfact=AKratio, origin=centroid)
-		US['geometry'][50] =  alaska_scaled
+		# US['geometry'][50] =  alaska_scaled
+		alaska_object.iloc[0] = alaska_scaled
+		US.loc[bool_alaska,'geometry'] = alaska_object
+
+		# # US['geometry'][50] =  alaska_scaled
 
 		bool_hawaii = US['STATE_NAME'] == 'Hawaii'
-		hawaii_geom = US.loc[bool_hawaii,'geometry'].iloc[0] 
+		hawaii_obj = US.loc[bool_hawaii,'geometry']
+		hawaii_geom = hawaii_obj.iloc[0]
 
 		hawaii_moved = shp.translate(hawaii_geom, HItrans[0], HItrans[1])  
 		centroid = hawaii_moved.centroid
 		hawaii_scaled = shp.scale( hawaii_moved, xfact=HIratio, yfact=HIratio, origin=centroid)
-		US['geometry'][0] =  hawaii_scaled
+		hawaii_obj.iloc[0] = hawaii_scaled
+
+		US.loc[bool_hawaii,'geometry'] =  hawaii_obj
 	 
 		states = df_US['Province/State'].unique().tolist()
 		dates = df_US['Date'].unique() 
@@ -1039,19 +968,13 @@ if __name__ == '__main__':
 		cb.set_label(' Daily case increaes  \n (average over last 7 days)')
 
 		ax.axis("off")
-
-
+ 
 		ax.annotate('Updated '+str( df_US['Date'].iloc[-1]), 
 		            [-135,22 ], color=[.3,.3,.3], style='italic',fontsize=8)
+		
 		fig_name= 'covid_state_map' 
-
 		if save_fig: 
-		    plt.savefig('./figs/' + fig_name + '.png',
-		            format='png', dpi=300,
-		            transparent=  True,             
-		            bbox_inches = 'tight', pad_inches = 0,
-		            )   
- 
+			jp.save_fig( figs_path, fig_name) 
 
 	# show all figures ----------------------------------
 	if show_plot:
