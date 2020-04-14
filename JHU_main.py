@@ -41,6 +41,8 @@ cmap = ListedColormap(cols)
 
 threshold_cases = 100
 threshold_deaths = 25
+threshold_deaths_state = 10
+
 
 # ticks 
 tick_list = [1e2,2e2,5e2,1e3,2e3,5e3,1e4,2e4,5e4,1e5,2e5,5e5,1e6,2e6,5e6,]
@@ -213,10 +215,7 @@ if __name__ == '__main__':
 	    bool_state = df_state['State'] == state
 	    df_state[bool_state].sort_values(by=['Date'])
 	 # --------------------------------------------------------------------------
-
-	threshold_cases = 100
-	threshold_deaths = 10
-
+ 
 	df_state['Delta C'] =   dp.days_since_threshold( df_state['Date'],
 	                                df_state['Confirmed'],
 	                                df_state['State'] , 
@@ -225,7 +224,7 @@ if __name__ == '__main__':
 	df_state['Delta D'] =  dp.days_since_threshold( df_state['Date'],
 	                                df_state['Deaths'],
 	                                df_state['State'] , 
-	                                threshold_deaths)
+	                                threshold_deaths_state)
   
 	# # find ratio and doubling # days  
 	df_state['ratio'] =  dp.get_exponential_ratio( df_state['Date'], 
@@ -678,7 +677,7 @@ if __name__ == '__main__':
 		ax.set_xlim([0,xDmax+5])
 		ax.set_ylim([10,yDmax*2])
 
-		ax.set_xlabel("Days since passing "+ str(threshold_deaths)+ " confirmed cases") 
+		ax.set_xlabel("Days since passing "+ str(threshold_deaths_state)+ " confirmed cases") 
 		ax.set_ylabel("Confirmed deaths") 
 
 		ax.annotate('Last update: '+str( df_state['Date'].iloc[-1]), 
@@ -971,7 +970,7 @@ if __name__ == '__main__':
  
 		ax.annotate('Updated '+str( df_US['Date'].iloc[-1]), 
 		            [-135,22 ], color=[.3,.3,.3], style='italic',fontsize=8)
-		
+
 		fig_name= 'covid_state_map' 
 		if save_fig: 
 			jp.save_fig( figs_path, fig_name) 
