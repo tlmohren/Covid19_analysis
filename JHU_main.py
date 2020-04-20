@@ -744,7 +744,7 @@ if __name__ == '__main__':
 		ax[0,0].annotate('Updated '+str( df_state['Date'].iloc[-1]), 
 		            [6, 120], color=[.3,.3,.3], style='italic',fontsize=8)
 
-		fig_name= 'covid_states_casesHighlightLog' 
+		fig_name= 'covid_state_casesHighlightLog' 
 		if save_fig: 
 			jp.save_fig( figs_path, fig_name) 
  
@@ -790,7 +790,7 @@ if __name__ == '__main__':
 		ax[0,0].annotate('Updated '+str( df_state['Date'].iloc[-1]), 
 		            [6, 12 ], color=[.3,.3,.3], style='italic',fontsize=8)
 
-		fig_name= 'covid_states_deathsHighlightLog' 
+		fig_name= 'covid_state_deathsHighlightLog' 
 		if save_fig: 
 			jp.save_fig( figs_path, fig_name) 
  
@@ -849,7 +849,7 @@ if __name__ == '__main__':
 		            [dates[0], df_state['Daily Confirmed'].max()*(0.94-0.1)], 
 		                color=[.3,.3,.3], style='italic',fontsize=8)
 
-		fig_name= 'covid_states_dailycases'
+		fig_name= 'covid_state_dailycases'
 		if save_fig: 
 			jp.save_fig( figs_path, fig_name) 
 

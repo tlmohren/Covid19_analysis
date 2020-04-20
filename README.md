@@ -63,4 +63,4 @@ Similar analysis to the global data can be performed on local areas. The data fo
 
 
 ## Daily cases per state <a name="state_daily"></a>
-![daily cases per state](./figs/covid_states_dailycases.png)
+![daily cases per state](./figs/covid_state_dailycases.png)
