@@ -4,6 +4,7 @@ import numpy as np
 from datetime import timedelta  
 import matplotlib.dates as dt      
 import glob
+import os
  
 #-----------functions----------------------------------------------------------
 
@@ -97,7 +98,7 @@ def replace_state( x):
 
   
 def load_daily_reports( file_path):
-    
+
     daily_reports = glob.glob(file_path + '\*.csv') 
     df = pd.DataFrame()
     for file in daily_reports :
@@ -159,16 +160,16 @@ def process_daily_data( df_daily):
     return df_state 
 
 
-def merge_countrydf(path, file_list):
-    
+def merge_countrydf(path, file_list): 
+
     df_list = []
     for file in file_list: 
-        df_list.append( pd.read_csv( path + file , index_col=None, header=0) )
+        file_loc = os.path.join( path, file ) 
+        df_list.append( pd.read_csv( file_loc , index_col=None, header=0) )
         
     df = pd.DataFrame()
-    date_cols = df_list[0].columns[  4:  ]
+    date_cols = df_list[0].columns[ 4: ]
 
-    # for date_col in date_cols[:]: 
     for i in range(len(date_cols)) : 
         col_index = df_list[0].columns[ [1 ] ].append( date_cols[[i]] ) 
         df_temp = df_list[0][col_index].copy() 

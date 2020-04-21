@@ -22,9 +22,10 @@ plot_states = True
 save_fig = True
 show_plot = False
 
-figs_path = os.path.join( os.getcwd(), 'figs') 
- 
-daily_path = r'D:\Code_projects\Covid19_analysis\COVID-19\csse_covid_19_data\csse_covid_19_daily_reports'
+base_path = os.getcwd()
+figs_path = os.path.join( base_path, 'figs')  
+ # daily_path = r'D:\Code_projects\Covid19_analysis\COVID-19\csse_covid_19_data\csse_covid_19_daily_reports')
+daily_path = os.path.join( base_path,"COVID-19\\csse_covid_19_data\\csse_covid_19_daily_reports"  )
 
 # figure size
 full_w = (12,7)
@@ -80,13 +81,15 @@ if __name__ == '__main__':
 	# --------------merge and process data---------------------
 	# ---------------------------------------------------------
 
-	path = r'D:\Code_projects\Covid19_analysis\COVID-19\csse_covid_19_data\csse_covid_19_time_series'
-	file_list = ['\\time_series_covid19_confirmed_global.csv',
-	         '\\time_series_covid19_deaths_global.csv',
-	         '\\time_series_covid19_recovered_global.csv'] 
+	# path = r'D:\Code_projects\Covid19_analysis\COVID-19\csse_covid_19_data\csse_covid_19_time_series'
+	time_path = os.path.join( base_path,"COVID-19\\csse_covid_19_data\\csse_covid_19_time_series"  )
+
+	file_list = ['time_series_covid19_confirmed_global.csv',
+	         'time_series_covid19_deaths_global.csv',
+	         'time_series_covid19_recovered_global.csv'] 
 
 	# merge data 
-	df_country = dp.merge_countrydf(path, file_list) 
+	df_country = dp.merge_countrydf(time_path, file_list) 
 
 	# remove diamond princess 
 	bool_other = df_country['Country/Region'].str.contains( 'Princess' , regex=False)
