@@ -922,9 +922,10 @@ if __name__ == '__main__':
 		hawaii_obj.iloc[0] = hawaii_scaled
 
 		US.loc[bool_hawaii,'geometry'] =  hawaii_obj
-	 
-		states = df_US['Province/State'].unique().tolist()
-		dates = df_US['Date'].unique() 
+	  
+		dates = df_US['Date'].unique()  
+		bool_prior = df_US['Date'] == dates[-7] 
+		states = df_US.loc[bool_prior,'Province/State'].unique().tolist()
 
 		for state in states: 
 		#     print(state)
