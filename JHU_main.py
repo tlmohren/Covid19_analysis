@@ -26,6 +26,7 @@ base_path = os.getcwd()
 figs_path = os.path.join( base_path, 'figs')  
  # daily_path = r'D:\Code_projects\Covid19_analysis\COVID-19\csse_covid_19_data\csse_covid_19_daily_reports')
 daily_path = os.path.join( base_path,"COVID-19\\csse_covid_19_data\\csse_covid_19_daily_reports"  )
+daily_path_us = os.path.join( base_path,"COVID-19\\csse_covid_19_data\\csse_covid_19_daily_reports_us"  )
 
 # figure size
 full_w = (12,7)
@@ -185,16 +186,14 @@ if __name__ == '__main__':
 
 	# state data import and process -------------------------------------------
 
-	df_daily = dp.load_daily_reports( daily_path )
+	df_daily = dp.load_daily_reports( daily_path, daily_path_us )
  
 	df_state = dp.process_daily_data( df_daily ) 
 
 	# adjust california funk 
 	bool_cal = df_state['State'] == 'California'
 	bool_prior = df_state['Date'] < datetime.datetime(2020,2,10).date() 
-	df_state.loc[bool_cal & bool_prior,'Confirmed'] = 0 
-
-
+	df_state.loc[bool_cal & bool_prior,'Confirmed'] = 0  
 
 	 # --------------------------------------------------------------------------
 	# df_state add missing dates, still to turn into function 
@@ -855,6 +854,8 @@ if __name__ == '__main__':
 		fig_name= 'covid_state_dailycases'
 		if save_fig: 
 			jp.save_fig( figs_path, fig_name) 
+
+ 
 
  
 		# plot country map ------------------------------------------

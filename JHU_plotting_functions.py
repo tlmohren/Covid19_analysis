@@ -91,7 +91,7 @@ def plot_daily( ax_p, date_col, data_series, measures = pd.DataFrame() ):
     edge_cut = int( np.floor(filter_w/2) ) 
     edge_cut_delay = int( np.floor(filter_w_delay/2) )  
     
-    weeks = mdates.DayLocator(bymonthday=[1,11,21], interval=1, tz=None)
+    weeks = mdates.DayLocator(bymonthday=[1], interval=1, tz=None)
     months_fmt = mdates.DateFormatter('%m-%d') 
     #------------------------------------------------------
  

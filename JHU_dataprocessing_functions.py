@@ -1,6 +1,7 @@
 import pandas as pd 
 import matplotlib.dates as mdates  
 import numpy as np
+import datetime
 from datetime import timedelta  
 import matplotlib.dates as dt      
 import glob
@@ -97,24 +98,36 @@ def replace_state( x):
     return new 
 
   
-def load_daily_reports( file_path):
-
-    daily_reports = glob.glob(file_path + '\*.csv') 
+def load_daily_reports(file_path, file_path_us):
     df = pd.DataFrame()
-    for file in daily_reports :
-        df_temp = pd.read_csv( file, index_col=None, header=0)  
 
-        if  '03-13-2020' in file :
-            # correct for mistake in JHU data set
+    dates =  np.arange(np.datetime64('2020-01-22'),np.datetime64('today')) 
+
+    for date in dates : 
+        
+        date_str = date.astype(datetime.datetime).strftime('%m-%d-%Y')
+        
+        # use different data after format change in JHU data set 
+        if date < np.datetime64('2020-04-20'):
+            filename = os.path.join(file_path, date_str +'.csv')  
+            df_temp = pd.read_csv( filename, index_col=None, header=0) 
+        else:
+            filename = os.path.join(file_path_us, date_str +'.csv')   
+            df_temp = pd.read_csv( filename, index_col=None, header=0)  
+
+        # correct for mistakea in JHU data set
+        if  date == np.datetime64('2020-03-13'):   
             df_temp['Last Update'] = pd.to_datetime(df_temp['Last Update']   )
             df_temp['Last Update'] = df_temp['Last Update'] + timedelta(days=2)  
-
-        if  '03-09-2020' in file : 
-            # correct for mistake in JHU data set
+        elif date == np.datetime64('2020-03-09'):  
             df_temp['Last Update'] = pd.to_datetime(df_temp['Last Update']   )
             df_temp['Last Update'] = df_temp['Last Update'] + timedelta(days=1) 
+        elif date >= np.datetime64('2020-04-23'):
+            df_temp['Last_Update'] = pd.to_datetime(df_temp['Last_Update']   )
+            df_temp['Last_Update'] = df_temp['Last_Update'] - timedelta(days=1) 
 
-        df = df.append(df_temp, sort=True)  
+        df = df.append(df_temp, sort=True) 
+
     return df
 
 
