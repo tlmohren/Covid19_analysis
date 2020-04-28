@@ -22,7 +22,7 @@ This repository contains analysis of the data on Covid-19 published daily by Joh
 <img src=./figs/covid_map.png  >          |   <img src=./figs/covid_state_map.png  >  
 :-------------------------:|:-------------------------:
 
-## Cases per country <a name="country_log"></a>
+## Cases per country <a name="country_log"></a> 
 ![Cases per country](./figs/covid_country_caseslog.png)
 
 
