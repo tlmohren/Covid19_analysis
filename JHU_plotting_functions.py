@@ -20,7 +20,7 @@ def smooth(x,window_len=11,window='hanning'):
 
 
 def plot_highlight( ax_p, goal_country, date_series, value_series, region_series, 
-	countries_to_highlight, threshold_cases): 
+	countries_to_highlight, threshold_cases, annotate_name=True): 
 
     dot_col = np.ones((3))*0.8 
     emph_col = [0.5,0.5,0.5]  
@@ -46,7 +46,8 @@ def plot_highlight( ax_p, goal_country, date_series, value_series, region_series
             
             ax_p.scatter( x_sub.iloc[-1],  y_sub.iloc[-1], 100, goal_col,
                          edgecolors='w',zorder = 5, linewidths=2)
-            ax_p.annotate( country ,[3,yCmax*1.2], color=goal_col, fontsize = 10,zorder = 5 )
+            if annotate_name == True: 
+                ax_p.annotate( country ,[3,yCmax*1.2], color=goal_col, fontsize = 10,zorder = 5 )
             
         elif country in countries_to_highlight: 
             ax_p.plot( x_sub, y_sub,'-' ,
@@ -71,7 +72,7 @@ def plot_highlight( ax_p, goal_country, date_series, value_series, region_series
 
 
 
-def plot_daily( ax_p, date_col, data_series, measures = pd.DataFrame() ):
+def plot_daily( ax_p, date_col, data_series, measures = pd.DataFrame() ,annotate=True):
     
     # plotting parameters 
     bar_alpha = .15
@@ -128,22 +129,22 @@ def plot_daily( ax_p, date_col, data_series, measures = pd.DataFrame() ):
     cmax = plot_smooth.max()*1.2  
     ax_p.set_ylim([0,cmax])  
     
-    arrowprops = dict(    arrowstyle = "->"    )
- 
-    # annotate
-    counter = 0
-    for i,row in measures.iterrows(): 
-        ax_p.plot( [row['Date'],row['Date']] ,[0,cmax],'--', alpha = 0.5,color='k',linewidth=1,zorder  = 6)  
-        chinese = ['Hubei','China'] 
-        if any(c in measures.iloc[0,:]['Measure'] for c in chinese):
-            ax_p.annotate( row['Measure'], (row["Date"],cmax*(0.94-0.1*counter)) ,
-                              xytext = ( days[-1],cmax*(0.9-0.1*counter)) ,
-                             rotation = 0, va='bottom',ha='right',fontsize=10, arrowprops=arrowprops)   
-        else:
-            ax_p.annotate( row['Measure'], (row["Date"],cmax*(0.94-0.1*counter)) ,
-                              xytext = ( days[0],cmax*(0.9-0.1*counter)) ,
-                             rotation = 0, va='bottom',ha='left',fontsize=10, arrowprops=arrowprops)    
-        counter = counter+1 
+    if annotate == True:
+        arrowprops = dict(    arrowstyle = "->"    )
+      
+        counter = 0
+        for i,row in measures.iterrows(): 
+            ax_p.plot( [row['Date'],row['Date']] ,[0,cmax],'--', alpha = 0.5,color='k',linewidth=1,zorder  = 6)  
+            chinese = ['Hubei','China'] 
+            if any(c in measures.iloc[0,:]['Measure'] for c in chinese):
+                ax_p.annotate( row['Measure'], (row["Date"],cmax*(0.94-0.1*counter)) ,
+                                  xytext = ( days[-1],cmax*(0.9-0.1*counter)) ,
+                                 rotation = 0, va='bottom',ha='right',fontsize=10, arrowprops=arrowprops)   
+            else:
+                ax_p.annotate( row['Measure'], (row["Date"],cmax*(0.94-0.1*counter)) ,
+                                  xytext = ( days[0],cmax*(0.9-0.1*counter)) ,
+                                 rotation = 0, va='bottom',ha='left',fontsize=10, arrowprops=arrowprops)    
+            counter = counter+1 
     return ax_p 
 
 
