@@ -176,7 +176,7 @@ def process_daily_data( df_daily):
 def merge_countrydf(path, file_list): 
 
     df_list = []
-    for file in file_list: 
+    for file in file_list:  
         file_loc = os.path.join( path, file ) 
         df_list.append( pd.read_csv( file_loc , index_col=None, header=0) )
         

@@ -1,6 +1,6 @@
 # COVID19 analysis
 
-This repository contains analysis of the data on Covid-19 published daily by Johns Hopkins University. In this analysis I look at daily increase of reported cases and deaths per country, and per US state. I annotated some of the graphs with dates of government response.
+This repository contains analysis of the data on Covid-19 published daily by Johns Hopkins University. In this analysis I look at daily increase of reported cases and deaths per country and per US state. I annotated some of the graphs with dates of government response.
 
 * [Total per country](#country_log)
 * [Daily cases per country](#country_daily)
@@ -22,7 +22,7 @@ This repository contains analysis of the data on Covid-19 published daily by Joh
 <img src=./figs/covid_map.png  >          |   <img src=./figs/covid_state_map.png  >  
 :-------------------------:|:-------------------------:
 
-## Cases per country <a name="country_log"></a>
+## Cases per country <a name="country_log"></a> 
 ![Cases per country](./figs/covid_country_caseslog.png)
 
 
