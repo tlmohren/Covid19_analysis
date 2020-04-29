@@ -162,7 +162,7 @@ if __name__ == '__main__':
               
     world['name'] = world['name'].map(conversion_dict).fillna(world['name'])
 
-    world['Cases'] = 0 
+    world['Cases'] = 1
     countries = world['name'].tolist()
      
     dates = df_country['Date'].unique() 
@@ -171,15 +171,19 @@ if __name__ == '__main__':
         bool_country = df_country['Country/Region'] == country 
         bool_date = df_country['Date'] == dates[-1]
         bool_prior = df_country['Date'] == dates[-7] 
-        if (bool_country & bool_date).sum() > 0:
-            now_cases = df_country[bool_country & bool_date ]['Confirmed'].iloc[0]
-            prior_cases = df_country[bool_country & bool_prior ]['Confirmed'].iloc[0]
+        
+        if ((bool_country & bool_date).sum() > 0)&((bool_country&bool_prior).sum() > 0):
+            now_cases = df_country.loc[bool_country&bool_date,'Confirmed'].values
+            prior_cases = df_country.loc[bool_country & bool_prior,'Confirmed'].values
             latest_cases = (now_cases-prior_cases)/7
+            
+            if latest_cases < 1:
+                latest_cases = 1
         else:
-            latest_cases = 0 
+            latest_cases = 2
         
         bool_world = world['name'] == country  
-        world.loc[bool_world,'Cases'] = np.log(latest_cases+1) 
+        world.loc[bool_world,'Cases'] = np.log(latest_cases) 
 
 
  
